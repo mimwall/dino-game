@@ -1,0 +1,84 @@
+import gamebox
+import pygame
+import random
+
+camera_width, camera_height = 800, 600
+dino_width, dino_height = 20, 50
+score = 0
+camera = gamebox.Camera(camera_width, camera_height)
+sheet = gamebox.load_sprite_sheet("dino_sprite.png", 4, 4)
+dino = gamebox.from_image(camera.x - 300, camera.y, sheet[9])
+cactus_1 = gamebox.from_image(camera.x, camera.y, "cactus1.png")
+cactus_1.scale_by(0.25)
+cactus_2 = gamebox.from_image(camera.x + 200, camera.y, "cactus1.png")
+cactus_2.scale_by(.20)
+ground_1 = gamebox.from_color(400, 475, "YELLOW", 800, 300)
+grounds = [ground_1]
+counter = 1
+counter_2 = 0
+counter_3 = 0
+cacti = [cactus_1, cactus_2]
+up = False
+game = True
+def tick(keys):
+    global counter
+    global counter_2
+    global counter_3
+    global score
+    global up
+    global game
+    if game:
+        if pygame.K_SPACE not in keys:
+            if counter_3 % 10 == 0:
+                dino.image = sheet[random.randrange(9, 12)]
+        dino.yspeed = 0
+        camera.clear("lightblue")
+        camera.draw(dino)
+        camera.draw(ground_1)
+        score_box = gamebox.from_text(camera.x, camera.y - 250, "Score: " + str(score), 24, "BLACK")
+        camera.draw(score_box)
+        if pygame.K_SPACE in keys:
+            up = True
+        if up:
+            dino.yspeed = -18
+            counter += 1
+            dino.yspeed += 1* counter
+            dino.y += dino.yspeed
+        counter_2 += 1
+        if counter_2 % 100 == 0:
+            new_cactus = gamebox.from_image(random.randint(camera.x + 400, camera.x + 800), camera.y, "cactus1.png")
+            new_cactus.scale_by(random.uniform(0.25, 0.10))
+            cacti.append(new_cactus)
+            score += 1
+        for cactus in cacti:
+            camera.draw(cactus)
+            cactus.x -=5
+            cactus.xspeed = 20
+            if dino.touches(cactus):
+                dino.move_to_stop_overlapping(cactus)
+                game_over = gamebox.from_text(camera.x, camera.y - 100, "GAME OVER", 50, "BLACK")
+                camera.draw(game_over)
+                game = False
+        counter_3 += 1
+        for ground in grounds:
+            if dino.bottom_touches(ground):
+                up = False
+                dino.yspeed = 0
+                counter = 1
+            camera.draw(ground)
+        if game == False:
+            score += 0
+        camera.display()
+    if game == False and pygame.K_SPACE in keys:
+        for cactus in cacti:
+            if cactus.x < dino.x or cactus.x > dino.x + 100 or cactus.touches(dino):
+                cacti.remove(cactus)
+        dino.x = camera.x - 300
+        dino.y = camera.y
+        score = 0
+        game = True
+
+
+ticks_per_second = 30
+gamebox.timer_loop(ticks_per_second, tick)
+
